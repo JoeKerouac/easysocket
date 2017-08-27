@@ -145,16 +145,6 @@ public class DatagramUtil {
     }
 
     /**
-     * 将四个字节转换为一个int类型的数字，从data中下标为0的数据开始
-     *
-     * @param data 四个字节的byte数组
-     * @return 四个byte数组转换为的一个int
-     */
-    public static int convert(byte[] data) {
-        return convert(data, 0);
-    }
-
-    /**
      * 将四个字节转换为一个int类型的数字
      *
      * @param data  data数据

@@ -13,7 +13,6 @@ package com.joe.easysocket.data;
  * <p>
  * 数据报body为变长，长度等于数据报head里边的数据报长度<br/>
  * <p>
- * 数据的最大长度为4096
  *
  * @author joe
  */
