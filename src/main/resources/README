@@ -1,0 +1,2 @@
+协议栈的所有可用配置都可以通过com.joe.easysocket.protocol.ServerConfig配置
+    如果需要做断点续传功能需要用到，在ServerConfig中配置EventCenter，然后监听ProtocolEvent.DISCAD事件
