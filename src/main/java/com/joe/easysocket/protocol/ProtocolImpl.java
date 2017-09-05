@@ -67,7 +67,8 @@ public class ProtocolImpl implements Protocol {
      * @param heartbeaat    最长心跳周期，单位为秒，超过该时间没有收到客户端任何消息后关闭该连接（该时间最小为30秒）
      */
     @Builder
-    ProtocolImpl(@NonNull PublishCenter publishCenter, String channel, @NonNull CustomDeque<ProtocolData> deque, int heartbeaat) {
+    ProtocolImpl(@NonNull PublishCenter publishCenter, String channel, @NonNull CustomDeque<ProtocolData> deque, int
+            heartbeaat) {
         register(publishCenter, channel);
         register(deque);
         this.heartbeat = heartbeaat < 30 ? 30 : heartbeaat;
@@ -118,7 +119,7 @@ public class ProtocolImpl implements Protocol {
                         if ((circle - heartbeat) > 0) {
                             logger.debug("连接{}心跳超时", id);
                             //心跳超时，关闭连接
-                            publish(id, ProtocolEvent.UNREGISTER, id);
+                            publish(id, ProtocolEvent.UNREGISTER, id, CloseCause.TIMEOUT);
                             channel.close();
                             pChannels.remove(id);
                         }
@@ -210,7 +211,7 @@ public class ProtocolImpl implements Protocol {
             return;
         }
         channel.close();
-        publish(id, ProtocolEvent.UNREGISTER, cause);
+        publish(id, ProtocolEvent.UNREGISTER, id, cause);
     }
 
     /**

@@ -82,7 +82,7 @@ public class DatagramUtil {
      * @return 从data中解析的数据报对象
      * @throws IllegalRequestException 正常情况不会抛该异常，当请求非法时可能抛出该异常
      */
-    public static Datagram decode(byte[] data) throws IllegalRequestException {
+    public static Datagram decode(final byte[] data) throws IllegalRequestException {
         try {
             logger.debug("要解析的数据为：{}", data);
             // 字符集数据
@@ -104,21 +104,28 @@ public class DatagramUtil {
             int len = convert(data, 1);
             logger.debug("要解析的数据报的字符集为：{}，版本号为：{}，数据报类型为：{}", charset, version, type);
 
-            if ((data.length - 16) != len) {
+            byte[] buffer = new byte[len + 16];
+            if ((data.length - 16) > len) {
                 logger.warn("数据报head中的长度字段为：{}，数据报body的实际长度为：{}", len, data.length - 16);
+                System.arraycopy(data, 0, buffer, 0, buffer.length);
+            } else if ((data.length - 16) == len) {
+                buffer = data;
+            } else {
+                logger.warn("数据报head中的长度字段为：{}，数据报body的实际长度为：{}", len, data.length - 16);
+                throw new IndexOutOfBoundsException("数据报body实际长度小于数据报head中的长度");
             }
 
             // 有可能是空报文的数据报
             if (len == 0) {
                 logger.debug("要解析的数据中head标志body长度为0，直接返回一个空body的datagram对象");
-                Datagram datagram = new Datagram(data, len, null, version, charset, type);
+                Datagram datagram = new Datagram(buffer, len, null, version, charset, type);
                 logger.debug("封装好的数据报body为：{}", datagram);
                 return datagram;
             } else {
                 // 真实的业务数据
                 byte[] body = new byte[len];
-                System.arraycopy(data, 16, body, 0, body.length);
-                Datagram datagram = new Datagram(data, len, body, version, charset, type);
+                System.arraycopy(buffer, 16, body, 0, body.length);
+                Datagram datagram = new Datagram(buffer, len, body, version, charset, type);
                 logger.debug("封装好的数据报body为：{}", datagram);
                 return datagram;
             }
@@ -142,6 +149,16 @@ public class DatagramUtil {
         b[2] = (byte) (len >> 8);
         b[3] = (byte) len;
         return b;
+    }
+
+    /**
+     * 将四个字节转换为一个int类型的数字，从data中下标为0的数据开始
+     *
+     * @param data 四个字节的byte数组
+     * @return 四个byte数组转换为的一个int
+     */
+    public static int convert(byte[] data) {
+        return convert(data, 0);
     }
 
     /**
