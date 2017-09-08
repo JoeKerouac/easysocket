@@ -116,7 +116,7 @@ public class MvcDataworker implements DataWorker {
         shutdown.set(false);
         init();
         this.callback = callback;
-        name = StringUtils.isEmpty(name) ? Tools.createNonceStr(4) : name;
+        name = StringUtils.isEmpty(name) ? Tools.createRandomStr(4) : name;
         new Thread(this, "数据处理器工作线程-" + name).start();
         //添加关闭监听
         addCloseListener();
