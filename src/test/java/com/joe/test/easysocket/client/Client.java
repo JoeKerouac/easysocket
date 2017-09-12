@@ -1,238 +1,183 @@
 package com.joe.test.easysocket.client;
 
-import com.joe.easysocket.common.DatagramUtil;
 import com.joe.easysocket.data.Datagram;
 import com.joe.test.easysocket.ext.InternalLogger;
+import com.joe.test.easysocket.ext.JsonParser;
 import com.joe.test.easysocket.ext.Logger;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.function.Consumer;
 
 /**
+ * 客户端
+ *
  * @author joe
  */
 public class Client {
-    private LengthFieldBasedFrameDecoder decoder;
-    private Socket socket;
-    private volatile boolean shutdown = true;
-    private volatile boolean faild = false;
+    private Reader reader;
+    private Writer writer;
+    private Logger logger;
+    private Logger proxy;
+    private Consumer<Datagram> consumer;
     private String host;
     private int port;
-    private Thread read;
-    private Thread write;
-    private Logger logger;
-    private BlockingDeque<Msg> queue;
+    private volatile boolean shutdown = true;
     private EventListener listener;
-    private InputStream input;
-    private OutputStream out;
-    private Consumer<Datagram> consumer;
-    private Throwable cause;
+    //心跳线程
+    private Thread heartbeatThread;
+    //最后一次发送数据的时间的时间戳
+    private long lastActive;
+    //心跳周期，单位为秒
+    private long heartbeat;
+    private JsonParser jsonParser;
+
+
+    private volatile boolean faild = false;
 
     @Builder
-    public Client(@NotNull String host, int port, @NotNull Logger logger, @NotNull Consumer<Datagram>
-            consumer) {
+    private Client(@NotNull String host, int port, @NotNull Logger logger, @NotNull Consumer<Datagram>
+            consumer, @NotNull JsonParser jsonParser, @NotNull EventListener listener, int heartbeat) {
         this.host = host;
         this.port = port;
-        this.logger = logger instanceof InternalLogger ? logger : InternalLogger.getLogger(logger, Client.class);
-        this.queue = new LinkedBlockingDeque<>();
+        this.logger = logger;
+        this.proxy = logger instanceof InternalLogger ? logger : InternalLogger.getLogger(logger, Client.class);
         this.consumer = consumer;
-        this.decoder = new LengthFieldBasedFrameDecoder();
+        this.listener = listener;
+        this.heartbeat = heartbeat > 30 ? heartbeat : 30;
+        this.jsonParser = jsonParser;
     }
 
-    public void start() {
+    public synchronized void start() {
+        start0(0);
+    }
+
+    /**
+     * 启动客户端
+     *
+     * @param invoker 启动调用者，0表示用户主动调用，1表示重新连接系统调用
+     * @return 返回true表示启动成功，返回false表示启动失败（重复启动）
+     */
+    private synchronized boolean start0(int invoker) {
+        if (!shutdown && invoker == 0) {
+            throw new IllegalThreadStateException("请勿重复启动客户端");
+        }
+
+        InputStream input;
+        OutputStream out;
+        Socket socket;
         try {
             socket = new Socket(host, port);
             input = socket.getInputStream();
             out = socket.getOutputStream();
         } catch (IOException e) {
-            logger.error("连接构建时发生异常");
-            logger.error(e.toString());
-            return;
-        }
-
-        //读取线程
-        read = new Thread(() -> {
-            try {
-                decoder.read(input, consumer);
-            } catch (IOException e) {
-                logger.warn("客户端读取异常，客户端关闭");
-                logger.warn(e.toString());
-                cause = e;
-                faild = true;
+            proxy.error("连接构建时发生异常:" + e);
+            listener.listen(SocketEvent.FAILD, e);
+            if (invoker == 1) {
+                heartbeatThread.interrupt();
             }
-        });
-
-        //发送线程
-        write = new Thread(() -> {
-            try {
-                write(out);
-            } catch (InterruptedException e) {
-                //线程被中断，ignore
-            } catch (IOException e) {
-                cause = e;
-                logger.warn("客户端发送异常，客户端关闭");
-                logger.warn(e.toString());
-                faild = true;
-            }
-        });
-    }
-
-    /**
-     * 连接是否打开
-     *
-     * @return 连接打开可写返回true，否则返回false
-     */
-    private boolean isOpen() {
-        return !shutdown && !faild;
-    }
-
-    /**
-     * 写数据（从队列读取，只要连接没有关闭就一直写）
-     *
-     * @param out
-     * @throws InterruptedException
-     * @throws IOException
-     */
-    private void write(OutputStream out) throws InterruptedException, IOException {
-        Msg msg = null;
-        while (isOpen()) {
-            try {
-                msg = queue.take();
-                logger.debug("收到消息：" + msg + "，准备发往服务器");
-                Datagram datagram = DatagramUtil.build(msg.getData(), (byte) 1, (byte) 1);
-                logger.debug("消息封装为数据报后是：" + datagram);
-                out.write(datagram.getBody());
-            } catch (IOException | InterruptedException e) {
-                //防止发送失败丢失数据
-                if (msg != null) {
-                    queue.put(msg);
-                }
-                throw e;
-            }
-        }
-    }
-
-    /**
-     * 往服务器发送数据
-     *
-     * @param invoke 要调用的接口名
-     * @param data   要发送的接口数据
-     * @return 返回true表示发送成功（并没有真正发送成功，只是加入了发送队列）
-     */
-    public boolean write(String invoke, byte[] data) {
-        try {
-            queue.put(new Msg(invoke, data));
-            return true;
-        } catch (InterruptedException e) {
-            logger.error("写入失败");
             return false;
         }
+        this.lastActive = System.currentTimeMillis();
+        this.reader = new Reader(input, logger, consumer, this::reconnect);
+        this.writer = new Writer(logger, out, jsonParser, this::reconnect);
+        this.reader.start();
+        this.writer.start();
+
+        this.shutdown = false;
+        if (invoker == 0) {
+            this.heartbeatThread = new Thread(() -> {
+                proxy.debug("心跳线程启动");
+                try {
+                    while (true) {
+                        long cycle = (System.currentTimeMillis() - lastActive) / 1000 + 1;
+                        if (cycle >= heartbeat) {
+                            //发送心跳包
+                            proxy.debug("发送心跳包");
+                            writer.write(null, null);
+                            this.lastActive = System.currentTimeMillis();
+                        }
+                        Thread.sleep(1000);
+                    }
+                } catch (InterruptedException e) {
+                    proxy.info("服务器关闭,心跳线程关闭");
+                }
+            }, "心跳线程");
+            this.heartbeatThread.start();
+            listener.listen(SocketEvent.REGISTER, socket);
+        } else {
+            listener.listen(SocketEvent.RECONNECT, socket);
+        }
+        return true;
     }
 
+    /**
+     * 发送数据
+     *
+     * @param invoke 要调用的接口
+     * @param data   要发送的数据的序列化
+     * @return 发送状态，返回true表示成功
+     */
+    public boolean write(String invoke, String data) {
+        if (shutdown) {
+            throw new RuntimeException("客户端尚未开启");
+        }
+        if (invoke == null || invoke.trim().isEmpty()) {
+            throw new IllegalArgumentException("invoke不能为空");
+        }
+        this.lastActive = System.currentTimeMillis();
+        return writer.write(invoke, data);
+    }
+
+    /**
+     * 获取当前客户端是否关闭
+     *
+     * @return 返回true表示已经关闭
+     */
     public boolean isShutdown() {
         return shutdown;
     }
 
-    private class LengthFieldBasedFrameDecoder {
-        // 数据报head中长度字段的起始位置（从0开始）
-        private int lengthFieldOffset;
-        // 数据报head中长度字段的长度
-        private int lengthFieldLength;
-        // 数据报head的长度
-        private int headLength;
-        // 数据报最大长度（包含消息head和body）
-        private int maxFrameLength;
-        //缓冲区大小
-        private int bufferSize;
-
-        /**
-         * @param maxFrameLength    数据报最大长度（包含消息head和body）
-         * @param lengthFieldOffset 数据报head中长度字段的起始位置（从0开始）
-         * @param lengthFieldLength 数据报head中长度字段的长度
-         * @param headLength        数据报head的长度
-         */
-        public LengthFieldBasedFrameDecoder(int maxFrameLength, int lengthFieldOffset, int lengthFieldLength,
-                                            int headLength) {
-            this.maxFrameLength = maxFrameLength;
-            this.lengthFieldOffset = lengthFieldOffset;
-            this.lengthFieldLength = lengthFieldLength;
-            this.headLength = headLength;
-            this.bufferSize = Math.min(maxFrameLength, 2048);
-        }
-
-        /**
-         * 版本1时的默认构造，后续可能会变
-         */
-        public LengthFieldBasedFrameDecoder() {
-            this(Datagram.MAX_LENGTH, 1, 4, 16);
-        }
-
-
-        /**
-         * 从流中读取
-         *
-         * @param in       要读取的流
-         * @param consumer 读取出来的数据报的处理方式
-         */
-        public void read(InputStream in, Consumer<Datagram> consumer) throws IOException {
-            try {
-                //缓冲区
-                byte[] buffer = new byte[this.bufferSize];
-                //数据报长度，包含请求头
-                int dataLen = 0;
-                //当前写入指针
-                int writePoint = 0;
-
-                while (isOpen()) {
-                    int readLen = in.read(buffer, writePoint, buffer.length - writePoint);
-                    writePoint += readLen;
-
-                    if (writePoint >= headLength) {
-                        dataLen = DatagramUtil.convert(buffer, lengthFieldOffset) + headLength;
-                    }
-
-                    if (writePoint >= dataLen) {
-                        //完整的数据报
-                        Datagram datagram = DatagramUtil.decode(buffer);
-                        System.arraycopy(buffer, dataLen, buffer, 0, buffer.length - dataLen);
-                        //重置
-                        dataLen = 0;
-                        writePoint = 0;
-                        consumer.accept(datagram);
-                    } else if (dataLen > buffer.length) {
-                        //扩容
-                        if (buffer.length >= Integer.MAX_VALUE) {
-                            throw new OutOfMemoryError("已经扩容至最大，无法继续扩容");
-                        }
-                        int newLen = buffer.length + Math.min(buffer.length / 2, 2048);
-                        if (newLen < 0) {
-                            newLen = Integer.MAX_VALUE;
-                        }
-                        byte[] newBuffer = new byte[newLen];
-                        System.arraycopy(buffer, 0, newBuffer, 0, writePoint);
-                        buffer = newBuffer;
-                    }
-                }
-            } catch (IOException e) {
-                throw e;
-            }
-        }
+    /**
+     * 关闭客户端
+     *
+     * @return 返回true表示关闭成功，返回false表示当前客户端已经处于关闭状态
+     */
+    public boolean shutdown() {
+        return shutdown0(0);
     }
 
+    /**
+     * 关闭客户端
+     *
+     * @param flag 0表示用户调用，1表示系统重连调用
+     * @return 返回true表示关闭成功，返回false表示当前客户端已经处于关闭状态
+     */
+    private synchronized boolean shutdown0(int flag) {
+        if (shutdown) {
+            return false;
+        }
+        //必须先将标志位设置为true，否则会导致死循环（client调用reader和writer的shutdown，然后reader和writer回调该shutdown）
+        shutdown = true;
 
-    @Data
-    @AllArgsConstructor
-    private static class Msg {
-        private String invoke;
-        private byte[] data;
+        this.reader.shutdown();
+        this.writer.shutdown();
+        return true;
+    }
+
+    /**
+     * 断线重连
+     */
+    private synchronized void reconnect() {
+        if (!shutdown && (this.reader.shutdown() || this.writer.shutdown())) {
+            //如果不是用户主动关闭的那么尝试重新连接（shutdown为true表示是用户主动关闭的）
+            //同时由于reader和writer两个
+            shutdown0(1);
+            start0(1);
+        }
     }
 }

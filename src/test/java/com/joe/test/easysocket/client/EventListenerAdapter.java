@@ -1,7 +1,5 @@
 package com.joe.test.easysocket.client;
 
-import com.joe.easysocket.data.Datagram;
-
 import java.net.Socket;
 
 /**
@@ -15,14 +13,11 @@ public interface EventListenerAdapter extends EventListener {
             case FAILD:
                 faild((Throwable) args[0]);
                 break;
-            case RECEIVE:
-                receive((Datagram) args[0]);
-                break;
             case REGISTER:
                 register((Socket) args[0]);
                 break;
             case RECONNECT:
-                reconnect((Throwable) args[0], (Socket) args[1]);
+                reconnect((Socket) args[1]);
                 break;
             case UNREGISTER:
                 unregister();
@@ -40,13 +35,6 @@ public interface EventListenerAdapter extends EventListener {
     void faild(Throwable cause);
 
     /**
-     * 接收到数据
-     *
-     * @param datagram 数据报
-     */
-    void receive(Datagram datagram);
-
-    /**
      * 连接注册成功
      *
      * @param socket 注册成功的连接
@@ -56,10 +44,9 @@ public interface EventListenerAdapter extends EventListener {
     /**
      * 自动重连成功（由于底层只是自动建立连接，并没有重新登录等逻辑，所以需要用户自己实现重连后的逻辑，例如重新登录）
      *
-     * @param cause  断开原因
      * @param socket 重连后的socket
      */
-    void reconnect(Throwable cause, Socket socket);
+    void reconnect(Socket socket);
 
     /**
      * 通道关闭（用户主动调用shutdown）
