@@ -110,11 +110,11 @@ public class ServerTest {
         private static AtomicInteger count = new AtomicInteger(0);
 
         @Path("login")
-        public User login(@GeneralParam("oppenid") String oppenid, @GeneralParam("account") @NotNull String account,
+        public User login(@GeneralParam("openid") String openid, @GeneralParam("account") @NotNull String account,
                           @GeneralParam("password") String password, @Context Session session) {
-            System.out.println("oppenid = [" + oppenid + "], account = [" + account + "], password = [" + password +
+            System.out.println("oppenid = [" + openid + "], account = [" + account + "], password = [" + password +
                     "], session = [" + session + "]");
-            return new User(oppenid, account, password);
+            return new User(openid, account, password);
         }
 
         //只有一个参数的时候
@@ -127,7 +127,7 @@ public class ServerTest {
         @Data
         @AllArgsConstructor
         private static class User {
-            private String oppenid;
+            private String openid;
             private String account;
             private String password;
         }
