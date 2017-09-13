@@ -108,9 +108,9 @@ public class Client {
                 }
             }, "心跳线程");
             this.heartbeatThread.start();
-            listener.listen(SocketEvent.REGISTER, socket);
+            listener.listen(SocketEvent.REGISTER, this);
         } else {
-            listener.listen(SocketEvent.RECONNECT, socket);
+            listener.listen(SocketEvent.RECONNECT, this);
         }
         return true;
     }

@@ -20,7 +20,7 @@ import java.util.concurrent.LinkedBlockingDeque;
  *
  * @author joe
  */
-public class Writer extends Worker{
+public class Writer extends Worker {
     //JSON序列化器
     private JsonParser jsonParser;
     //队列
@@ -30,7 +30,7 @@ public class Writer extends Worker{
 
     public Writer(@NotNull Logger logger, @NotNull OutputStream out, @NotNull JsonParser jsonParser, Callback
             callback) {
-        super(logger instanceof InternalLogger ? logger : InternalLogger.getLogger(logger, Writer.class) , callback);
+        super(logger instanceof InternalLogger ? logger : InternalLogger.getLogger(logger, Writer.class), callback);
         this.out = out;
         this.queue = new LinkedBlockingDeque<>();
         this.jsonParser = jsonParser;
@@ -47,7 +47,7 @@ public class Writer extends Worker{
         shutdown = false;
 
         this.worker = new Thread(() -> {
-            logger.debug("启动数据发送器");
+            logger.info("数据发送器启动");
             try {
                 write();
             } catch (IOException e) {
@@ -67,8 +67,8 @@ public class Writer extends Worker{
     /**
      * 往服务器发送数据
      *
-     * @param invoke   要调用的接口名
-     * @param data 要发送的接口数据的序列化
+     * @param invoke 要调用的接口名
+     * @param data   要发送的接口数据的序列化
      * @return 返回true表示发送成功（并没有真正发送成功，只是加入了发送队列）
      */
     public boolean write(String invoke, String data) {

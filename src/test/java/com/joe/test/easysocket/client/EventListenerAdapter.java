@@ -14,10 +14,10 @@ public interface EventListenerAdapter extends EventListener {
                 faild((Throwable) args[0]);
                 break;
             case REGISTER:
-                register((Socket) args[0]);
+                register((Client) args[0]);
                 break;
             case RECONNECT:
-                reconnect((Socket) args[0]);
+                reconnect((Client) args[0]);
                 break;
             case UNREGISTER:
                 unregister();
@@ -37,16 +37,16 @@ public interface EventListenerAdapter extends EventListener {
     /**
      * 连接注册成功
      *
-     * @param socket 注册成功的连接
+     * @param client 注册成功后的client
      */
-    void register(Socket socket);
+    void register(Client client);
 
     /**
      * 自动重连成功（由于底层只是自动建立连接，并没有重新登录等逻辑，所以需要用户自己实现重连后的逻辑，例如重新登录）
      *
-     * @param socket 重连后的socket
+     * @param client 重连后的client
      */
-    void reconnect(Socket socket);
+    void reconnect(Client client);
 
     /**
      * 通道关闭（用户主动调用shutdown）

@@ -55,7 +55,7 @@ public class Reader extends Worker {
         }
         shutdown = false;
         this.worker = new Thread(() -> {
-            logger.debug("数据读取器启动");
+            logger.info("数据读取器启动");
             try {
                 read();
             } catch (IOException e) {
@@ -87,6 +87,10 @@ public class Reader extends Worker {
 
         while (!isShutdown()) {
             int readLen = input.read(buffer, writePoint, buffer.length - writePoint);
+            if (readLen == -1) {
+                logger.error("socket输入流被关闭，读取结束");
+                shutdown();
+            }
             writePoint += readLen;
 
             if (writePoint >= headLength) {

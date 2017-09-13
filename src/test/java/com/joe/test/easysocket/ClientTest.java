@@ -10,7 +10,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.io.UnsupportedEncodingException;
-import java.net.Socket;
 
 /**
  * @author joe
@@ -34,12 +33,13 @@ public class ClientTest {
             }
 
             @Override
-            public void register(Socket socket) {
+            public void register(Client socket) {
                 System.out.println("register");
             }
 
             @Override
-            public void reconnect(Socket socket) {
+            public void reconnect(Client socket) {
+                socket.write("user/register", parser.toJson(new User("oppenid", "account", "password")));
                 System.out.println("reconnect");
             }
 
