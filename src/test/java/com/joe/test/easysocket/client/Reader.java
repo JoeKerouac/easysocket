@@ -17,7 +17,7 @@ import java.util.function.Consumer;
  *
  * @author joe
  */
-public class Reader extends Worker{
+public class Reader extends Worker {
     // 数据报head中长度字段的起始位置（从0开始）
     private final int lengthFieldOffset = 1;
     // 数据报head的长度
@@ -40,7 +40,7 @@ public class Reader extends Worker{
      * @param consumer 数据报处理器
      */
     public Reader(@NotNull InputStream input, @NotNull Logger logger, Consumer<Datagram> consumer, Callback callback) {
-        super(logger instanceof InternalLogger ? logger : InternalLogger.getLogger(logger, Reader.class) , callback);
+        super(logger instanceof InternalLogger ? logger : InternalLogger.getLogger(logger, Reader.class), callback);
         this.input = input;
         this.consumer = consumer;
         this.bufferSize = 1024;
@@ -125,6 +125,16 @@ public class Reader extends Worker{
                 System.arraycopy(buffer, 0, newBuffer, 0, writePoint);
                 buffer = newBuffer;
             }
+        }
+    }
+
+    @Override
+    public synchronized boolean shutdown() {
+        if (super.shutdown()) {
+            this.service.shutdown();
+            return true;
+        } else {
+            return false;
         }
     }
 }

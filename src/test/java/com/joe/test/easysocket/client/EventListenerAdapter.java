@@ -17,7 +17,7 @@ public interface EventListenerAdapter extends EventListener {
                 register((Socket) args[0]);
                 break;
             case RECONNECT:
-                reconnect((Socket) args[1]);
+                reconnect((Socket) args[0]);
                 break;
             case UNREGISTER:
                 unregister();
