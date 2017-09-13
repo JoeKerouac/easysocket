@@ -1,6 +1,6 @@
 package com.joe.test.easysocket.client;
 
-import com.joe.easysocket.data.Datagram;
+import com.joe.easysocket.ext.dataworker.mvc.data.InterfaceData;
 
 /**
  * 事件适配器
@@ -23,7 +23,7 @@ public interface EventListenerAdapter extends EventListener {
                 unregister();
                 break;
             case RECEIVE:
-                receive((Datagram) args[0]);
+                receive((InterfaceData) args[0]);
                 break;
             default:
                 throw new RuntimeException("没有监听[" + event + "]事件");
@@ -59,7 +59,7 @@ public interface EventListenerAdapter extends EventListener {
     /**
      * 收到数据报回调
      *
-     * @param datagram 收到的数据报
+     * @param data 收到的数据
      */
-    void receive(Datagram datagram);
+    void receive(InterfaceData data);
 }

@@ -17,8 +17,51 @@ import java.net.Socket;
  * @author joe
  */
 public class Client {
+    //默认空实现日志对象
+    private static final Logger DEFAULT = new Logger() {
+        @Override
+        public void debug(String msg) {
+
+        }
+
+        @Override
+        public void info(String msg) {
+
+        }
+
+        @Override
+        public void warn(String msg) {
+
+        }
+
+        @Override
+        public void error(String msg) {
+
+        }
+
+        @Override
+        public void debug(String flag, String msg) {
+
+        }
+
+        @Override
+        public void info(String flag, String msg) {
+
+        }
+
+        @Override
+        public void warn(String flag, String msg) {
+
+        }
+
+        @Override
+        public void error(String flag, String msg) {
+
+        }
+    };
     private Reader reader;
     private Writer writer;
+    //日志对象
     private Logger logger;
     private Logger proxy;
     private String host;
@@ -31,26 +74,32 @@ public class Client {
     private long lastActive;
     //心跳周期，单位为秒
     private long heartbeat;
+    //序列化器
     private Serializer serializer;
 
-
-    private volatile boolean faild = false;
-
     @Builder
-    private Client(@NotNull String host, int port, @NotNull Logger logger, @NotNull Serializer serializer,
+    private Client(@NotNull String host, int port, Logger logger, @NotNull Serializer serializer,
                    EventListener listener, int heartbeat) {
+        if (host == null || host.trim().isEmpty() || port <= 0 || serializer == null) {
+            throw new IllegalArgumentException("请检查您的参数");
+        }
         this.host = host;
         this.port = port;
-        this.logger = logger;
+        this.logger = logger == null ? DEFAULT : logger;
         this.proxy = logger instanceof InternalLogger ? logger : InternalLogger.getLogger(logger, Client.class);
-        this.listener = listener != null ? listener : new EventListener() {
-            @Override
-            public void listen(SocketEvent event, Object... args) {
-                logger.warn("事件[" + event + "]将被丢弃");
-            }
-        };
+        this.listener = listener != null ? listener : this::discard;
         this.heartbeat = heartbeat > 30 ? heartbeat : 30;
         this.serializer = serializer;
+    }
+
+    /**
+     * 丢弃事件
+     *
+     * @param event 要丢弃的事件
+     * @param args  事件参数
+     */
+    private void discard(SocketEvent event, Object... args) {
+        logger.warn("事件[" + event + "]将被丢弃");
     }
 
     public synchronized void start() {
@@ -84,7 +133,7 @@ public class Client {
             return false;
         }
         this.lastActive = System.currentTimeMillis();
-        this.reader = new Reader(input, logger, listener, this::reconnect);
+        this.reader = new Reader(input, logger, listener, this::reconnect, serializer);
         this.writer = new Writer(logger, out, serializer, this::reconnect);
         this.reader.start();
         this.writer.start();

@@ -1,11 +1,14 @@
 package com.joe.test.easysocket.client;
 
 import com.joe.test.easysocket.ext.Logger;
+import com.joe.test.easysocket.ext.Serializer;
 
 /**
  * @author joe
  */
 public abstract class Worker {
+    //序列化器
+    Serializer serializer;
     //日志对象
     Logger logger;
     //当前服务器状态
@@ -15,9 +18,10 @@ public abstract class Worker {
     //关闭回调，系统关闭时会调用
     Callback callback;
 
-    public Worker(Logger logger, Callback callback) {
+    public Worker(Logger logger, Callback callback, Serializer serializer) {
         this.logger = logger;
         this.callback = callback;
+        this.serializer = serializer;
     }
 
     /**

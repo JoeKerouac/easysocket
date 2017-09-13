@@ -1,12 +1,12 @@
 package com.joe.test.easysocket;
 
 import com.joe.easysocket.common.DatagramUtil;
-import com.joe.easysocket.data.Datagram;
 import com.joe.easysocket.ext.dataworker.mvc.data.InterfaceData;
 import com.joe.parse.json.JsonParser;
 import com.joe.test.easysocket.client.Client;
 import com.joe.test.easysocket.client.EventListenerAdapter;
 import com.joe.test.easysocket.ext.Logger;
+import com.joe.test.easysocket.ext.Serializer;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -21,8 +21,8 @@ public class ClientTest {
         //客户端设置心跳周期为50秒，服务端的设置为了30秒，所以服务端会检测到心跳超时最终关闭该客户端
         Client client = Client.builder().host("127.0.0.1").port(10051).listener(new EventListenerAdapter() {
             @Override
-            public void receive(Datagram datagram) {
-                System.out.println(datagram);
+            public void receive(InterfaceData data) {
+                System.out.println(data);
             }
 
             @Override
@@ -85,7 +85,17 @@ public class ClientTest {
             public void error(String flag, String msg) {
                 System.out.println(flag + ":" + msg);
             }
-        }).jsonParser(parser::toJson).heartbeat(50).build();
+        }).serializer(new Serializer() {
+            @Override
+            public byte[] write(Object obj) {
+                return parser.toJson(obj).getBytes();
+            }
+
+            @Override
+            public <T> T read(byte[] data , Class<T> clazz) {
+                return parser.readAsObject(data , clazz);
+            }
+        }).heartbeat(50).build();
         client.start();
         client.write("user/register", parser.toJson(new User("oppenid", "account", "password")));
         //以下两个请求只有invoke不同，结果相同，也就是最前边可以以/开头，也可以不以/开头

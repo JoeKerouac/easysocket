@@ -21,8 +21,6 @@ import java.util.concurrent.LinkedBlockingDeque;
  * @author joe
  */
 public class Writer extends Worker {
-    //JSON序列化器
-    private Serializer serializer;
     //队列
     private BlockingDeque<Msg> queue;
     //socket输出流
@@ -30,11 +28,10 @@ public class Writer extends Worker {
 
     public Writer(@NotNull Logger logger, @NotNull OutputStream out, @NotNull Serializer serializer, Callback
             callback) {
-        super(logger instanceof InternalLogger ? logger : InternalLogger.getLogger(logger, Writer.class), callback);
+        super(logger instanceof InternalLogger ? logger : InternalLogger.getLogger(logger, Writer.class), callback,
+                serializer);
         this.out = out;
         this.queue = new LinkedBlockingDeque<>();
-        this.serializer = serializer;
-        this.callback = callback;
     }
 
     /**
@@ -101,8 +98,8 @@ public class Writer extends Worker {
                 } else {
                     //普通接口请求包
                     InterfaceData interfaceData = new InterfaceData(String.valueOf(System.currentTimeMillis()), msg
-                            .getInvoke(), msg.getData());
-                    datagram = DatagramUtil.build(serializer.write(interfaceData).getBytes(), (byte) 1, (byte) 1);
+                            .getInvoke(), new String(serializer.write(msg.getData())));
+                    datagram = DatagramUtil.build(serializer.write(interfaceData), (byte) 1, (byte) 1);
                 }
                 logger.debug("消息封装为数据报后是：" + datagram);
                 out.write(datagram.getData());
@@ -122,6 +119,6 @@ public class Writer extends Worker {
     @AllArgsConstructor
     private static class Msg {
         private String invoke;
-        private String data;
+        private Object data;
     }
 }

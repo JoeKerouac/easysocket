@@ -2,8 +2,10 @@ package com.joe.test.easysocket.client;
 
 import com.joe.easysocket.common.DatagramUtil;
 import com.joe.easysocket.data.Datagram;
+import com.joe.easysocket.ext.dataworker.mvc.data.InterfaceData;
 import com.joe.test.easysocket.ext.InternalLogger;
 import com.joe.test.easysocket.ext.Logger;
+import com.joe.test.easysocket.ext.Serializer;
 
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
@@ -38,8 +40,11 @@ public class Reader extends Worker {
      * @param logger   日志对象
      * @param listener 事件监听器
      */
-    public Reader(@NotNull InputStream input, @NotNull Logger logger, EventListener listener, Callback callback) {
-        super(logger instanceof InternalLogger ? logger : InternalLogger.getLogger(logger, Reader.class), callback);
+    public Reader(@NotNull InputStream input, @NotNull Logger logger, @NotNull EventListener listener, Callback
+            callback,
+                  Serializer serializer) {
+        super(logger instanceof InternalLogger ? logger : InternalLogger.getLogger(logger, Reader.class), callback,
+                serializer);
         this.input = input;
         this.listener = listener;
         this.bufferSize = 1024;
@@ -106,13 +111,18 @@ public class Reader extends Worker {
                 //重置
                 dataLen = 0;
                 writePoint = 0;
-                if (listener != null) {
+
+                if (datagram.getType() == 0) {
+                    logger.debug("收到的数据报为心跳包，忽略处理");
+                } else if (datagram.getType() == 1) {
                     logger.debug("将数据报[" + datagram + "]提交到线程池处理");
+
                     service.submit(() -> {
-                        listener.listen(SocketEvent.RECEIVE, datagram);
+                        logger.debug("开始解析数据报[" + datagram + "]的body");
+                        InterfaceData data = serializer.read(datagram.getBody(), InterfaceData.class);
+                        logger.debug("解析出来的数据报body为：" + data);
+                        listener.listen(SocketEvent.RECEIVE, data);
                     });
-                } else {
-                    logger.warn("当前没有数据处理器！！读取到的数据报" + datagram + "将要被丢弃");
                 }
             } else if (dataLen > buffer.length) {
                 //扩容
