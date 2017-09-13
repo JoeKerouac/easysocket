@@ -1,6 +1,7 @@
 package com.joe.test.easysocket;
 
 import com.joe.easysocket.common.DatagramUtil;
+import com.joe.easysocket.data.Datagram;
 import com.joe.easysocket.ext.dataworker.mvc.data.InterfaceData;
 import com.joe.parse.json.JsonParser;
 import com.joe.test.easysocket.client.Client;
@@ -8,8 +9,6 @@ import com.joe.test.easysocket.client.EventListenerAdapter;
 import com.joe.test.easysocket.ext.Logger;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-
-import java.io.UnsupportedEncodingException;
 
 /**
  * @author joe
@@ -20,13 +19,12 @@ public class ClientTest {
     public static void main(String[] args) throws Exception {
 
         //客户端设置心跳周期为50秒，服务端的设置为了30秒，所以服务端会检测到心跳超时最终关闭该客户端
-        Client client = Client.builder().host("127.0.0.1").port(10051).consumer(datagram -> {
-            try {
-                System.out.println(new String(datagram.getBody(), datagram.getCharset()));
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
+        Client client = Client.builder().host("127.0.0.1").port(10051).listener(new EventListenerAdapter() {
+            @Override
+            public void receive(Datagram datagram) {
+                System.out.println(datagram);
             }
-        }).listener(new EventListenerAdapter() {
+
             @Override
             public void faild(Throwable cause) {
                 cause.printStackTrace();
@@ -92,8 +90,8 @@ public class ClientTest {
         client.write("user/register", parser.toJson(new User("oppenid", "account", "password")));
         //以下两个请求只有invoke不同，结果相同，也就是最前边可以以/开头，也可以不以/开头
         //一下请求的是服务端测试接口
-//        client.write("user/login", parser.toJson(new User("oppenid", "account", "password")));
-//        client.write(build("/user/login", parser.toJson(new User("oppenid", "account", "password"))));
+//        client.write("user/login", parser.write(new User("oppenid", "account", "password")));
+//        client.write(build("/user/login", parser.write(new User("oppenid", "account", "password"))));
     }
 
     /**

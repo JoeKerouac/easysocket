@@ -1,8 +1,7 @@
 package com.joe.test.easysocket.client;
 
-import com.joe.easysocket.data.Datagram;
 import com.joe.test.easysocket.ext.InternalLogger;
-import com.joe.test.easysocket.ext.JsonParser;
+import com.joe.test.easysocket.ext.Serializer;
 import com.joe.test.easysocket.ext.Logger;
 import lombok.Builder;
 
@@ -11,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.util.function.Consumer;
 
 /**
  * 客户端
@@ -23,7 +21,6 @@ public class Client {
     private Writer writer;
     private Logger logger;
     private Logger proxy;
-    private Consumer<Datagram> consumer;
     private String host;
     private int port;
     private volatile boolean shutdown = true;
@@ -34,22 +31,26 @@ public class Client {
     private long lastActive;
     //心跳周期，单位为秒
     private long heartbeat;
-    private JsonParser jsonParser;
+    private Serializer serializer;
 
 
     private volatile boolean faild = false;
 
     @Builder
-    private Client(@NotNull String host, int port, @NotNull Logger logger, @NotNull Consumer<Datagram>
-            consumer, @NotNull JsonParser jsonParser, @NotNull EventListener listener, int heartbeat) {
+    private Client(@NotNull String host, int port, @NotNull Logger logger, @NotNull Serializer serializer,
+                   EventListener listener, int heartbeat) {
         this.host = host;
         this.port = port;
         this.logger = logger;
         this.proxy = logger instanceof InternalLogger ? logger : InternalLogger.getLogger(logger, Client.class);
-        this.consumer = consumer;
-        this.listener = listener;
+        this.listener = listener != null ? listener : new EventListener() {
+            @Override
+            public void listen(SocketEvent event, Object... args) {
+                logger.warn("事件[" + event + "]将被丢弃");
+            }
+        };
         this.heartbeat = heartbeat > 30 ? heartbeat : 30;
-        this.jsonParser = jsonParser;
+        this.serializer = serializer;
     }
 
     public synchronized void start() {
@@ -83,8 +84,8 @@ public class Client {
             return false;
         }
         this.lastActive = System.currentTimeMillis();
-        this.reader = new Reader(input, logger, consumer, this::reconnect);
-        this.writer = new Writer(logger, out, jsonParser, this::reconnect);
+        this.reader = new Reader(input, logger, listener, this::reconnect);
+        this.writer = new Writer(logger, out, serializer, this::reconnect);
         this.reader.start();
         this.writer.start();
 

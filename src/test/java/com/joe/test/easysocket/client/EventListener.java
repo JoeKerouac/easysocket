@@ -1,7 +1,7 @@
 package com.joe.test.easysocket.client;
 
 /**
- * 事件监听器，推荐使用事件适配器EventListenerAdapter
+ * 事件监听器，推荐使用事件适配器{@link com.joe.test.easysocket.client.EventListenerAdapter}
  *
  * @author joe
  */

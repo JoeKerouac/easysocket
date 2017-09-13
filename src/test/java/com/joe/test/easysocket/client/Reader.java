@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Consumer;
 
 /**
  * socket数据读取器
@@ -22,8 +21,8 @@ public class Reader extends Worker {
     private final int lengthFieldOffset = 1;
     // 数据报head的长度
     private final int headLength = 16;
-    //数据处理器
-    private Consumer<Datagram> consumer;
+    //事件监听器
+    private EventListener listener;
     //socket输入流
     private InputStream input;
     //缓冲区大小
@@ -37,12 +36,12 @@ public class Reader extends Worker {
      *
      * @param input    socket的输入流
      * @param logger   日志对象
-     * @param consumer 数据报处理器
+     * @param listener 事件监听器
      */
-    public Reader(@NotNull InputStream input, @NotNull Logger logger, Consumer<Datagram> consumer, Callback callback) {
+    public Reader(@NotNull InputStream input, @NotNull Logger logger, EventListener listener, Callback callback) {
         super(logger instanceof InternalLogger ? logger : InternalLogger.getLogger(logger, Reader.class), callback);
         this.input = input;
-        this.consumer = consumer;
+        this.listener = listener;
         this.bufferSize = 1024;
     }
 
@@ -107,10 +106,10 @@ public class Reader extends Worker {
                 //重置
                 dataLen = 0;
                 writePoint = 0;
-                if (consumer != null) {
+                if (listener != null) {
                     logger.debug("将数据报[" + datagram + "]提交到线程池处理");
                     service.submit(() -> {
-                        consumer.accept(datagram);
+                        listener.listen(SocketEvent.RECEIVE, datagram);
                     });
                 } else {
                     logger.warn("当前没有数据处理器！！读取到的数据报" + datagram + "将要被丢弃");

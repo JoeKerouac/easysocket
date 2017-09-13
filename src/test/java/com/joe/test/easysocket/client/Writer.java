@@ -4,7 +4,7 @@ import com.joe.easysocket.common.DatagramUtil;
 import com.joe.easysocket.data.Datagram;
 import com.joe.easysocket.ext.dataworker.mvc.data.InterfaceData;
 import com.joe.test.easysocket.ext.InternalLogger;
-import com.joe.test.easysocket.ext.JsonParser;
+import com.joe.test.easysocket.ext.Serializer;
 import com.joe.test.easysocket.ext.Logger;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,18 +22,18 @@ import java.util.concurrent.LinkedBlockingDeque;
  */
 public class Writer extends Worker {
     //JSON序列化器
-    private JsonParser jsonParser;
+    private Serializer serializer;
     //队列
     private BlockingDeque<Msg> queue;
     //socket输出流
     private OutputStream out;
 
-    public Writer(@NotNull Logger logger, @NotNull OutputStream out, @NotNull JsonParser jsonParser, Callback
+    public Writer(@NotNull Logger logger, @NotNull OutputStream out, @NotNull Serializer serializer, Callback
             callback) {
         super(logger instanceof InternalLogger ? logger : InternalLogger.getLogger(logger, Writer.class), callback);
         this.out = out;
         this.queue = new LinkedBlockingDeque<>();
-        this.jsonParser = jsonParser;
+        this.serializer = serializer;
         this.callback = callback;
     }
 
@@ -102,7 +102,7 @@ public class Writer extends Worker {
                     //普通接口请求包
                     InterfaceData interfaceData = new InterfaceData(String.valueOf(System.currentTimeMillis()), msg
                             .getInvoke(), msg.getData());
-                    datagram = DatagramUtil.build(jsonParser.toJson(interfaceData).getBytes(), (byte) 1, (byte) 1);
+                    datagram = DatagramUtil.build(serializer.write(interfaceData).getBytes(), (byte) 1, (byte) 1);
                 }
                 logger.debug("消息封装为数据报后是：" + datagram);
                 out.write(datagram.getData());

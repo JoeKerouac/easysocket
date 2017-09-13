@@ -1,6 +1,6 @@
 package com.joe.test.easysocket.client;
 
-import java.net.Socket;
+import com.joe.easysocket.data.Datagram;
 
 /**
  * 事件适配器
@@ -21,6 +21,9 @@ public interface EventListenerAdapter extends EventListener {
                 break;
             case UNREGISTER:
                 unregister();
+                break;
+            case RECEIVE:
+                receive((Datagram) args[0]);
                 break;
             default:
                 throw new RuntimeException("没有监听[" + event + "]事件");
@@ -52,4 +55,11 @@ public interface EventListenerAdapter extends EventListener {
      * 通道关闭（用户主动调用shutdown）
      */
     void unregister();
+
+    /**
+     * 收到数据报回调
+     *
+     * @param datagram 收到的数据报
+     */
+    void receive(Datagram datagram);
 }
