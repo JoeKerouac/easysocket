@@ -35,7 +35,7 @@ public abstract class AbstractSpringContainer<T extends Bean> implements Contain
             logger.debug("当前容器名字为：{}", className);
             String beanClassName = className.replace("Container", "");
             logger.debug("获取的bean类名为：{}", beanClassName);
-            this.clazz = (Class<T>) Thread.currentThread().getContextClassLoader().loadClass(beanClassName);
+            this.clazz = (Class<T>) Class.forName(beanClassName);
             return;
         } catch (Exception e) {
             logger.debug("通过名字获取bean类型失败，尝试通过泛型获取");

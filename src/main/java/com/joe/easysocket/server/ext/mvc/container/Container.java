@@ -23,7 +23,7 @@ public interface Container<T extends Bean> extends Register<T>, Resource {
     /**
      * 初始化bean，在容器中的bean被找出后根据需要选择性的初始化
      *
-     * @param beans 所有的bean，key为bean的名字，value为bean类型
+     * @param beans 所有的bean
      */
     void initBean(List<T> beans);
 }
