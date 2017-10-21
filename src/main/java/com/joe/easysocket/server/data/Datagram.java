@@ -30,7 +30,7 @@ public class Datagram {
     private final String charset;
     // 数据报body
     private final byte[] body;
-    // 数据报数据类型（0：心跳包；1：内置MVC数据处理器数据类型；除了0和1外可以自己定义数据类型）
+    // 数据报数据类型（0：心跳包；1：内置MVC数据处理器数据类型；2：文件传输；除了0和1外可以自己定义数据类型）
     private final byte type;
 
     /**
