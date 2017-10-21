@@ -22,7 +22,7 @@ public class BaseDTO<T> implements Serializable {
 		// 参数错误
 		msg.put("400", "Fail Param");
 		// 找不到参数解析器
-		msg.put("401", "Data Parser Not Found");
+		msg.put("505", "Data Parser Not Found");
 		// 找不到指定资源
 		msg.put("404", "NotFoundResource");
 		// 系统错误

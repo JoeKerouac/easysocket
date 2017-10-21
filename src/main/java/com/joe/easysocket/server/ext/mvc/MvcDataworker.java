@@ -349,7 +349,7 @@ public class MvcDataworker implements DataWorker {
                     message.getInvoke(), findWriterInterceptor(null));
         } catch (MediaTypeNoSupportException e) {
             logger.warn("找不到对应的参数解析器", e);
-            resultData = buildResult(requestContext.getSource(), new BaseDTO<>("401"), message.getId(),
+            resultData = buildResult(requestContext.getSource(), new BaseDTO<>("505"), message.getId(),
                     message.getInvoke(), resolveDataInterceptor(requestContext, responseContext));
         } catch (ParamValidationException e) {
             logger.warn("参数验证失败");

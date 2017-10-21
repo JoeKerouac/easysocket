@@ -8,6 +8,7 @@ import com.joe.easysocket.server.ext.mvc.container.Provider;
 import com.joe.easysocket.server.ext.mvc.context.RequestContext;
 import com.joe.easysocket.server.ext.mvc.context.ResponseContext;
 import com.joe.easysocket.server.ext.mvc.context.session.Session;
+import com.joe.easysocket.server.ext.mvc.exceptionmapper.ExceptionMapper;
 import com.joe.easysocket.server.ext.mvc.filter.NioFilter;
 import com.joe.easysocket.server.ext.mvc.filter.NioRequestFilter;
 import com.joe.easysocket.server.ext.mvc.filter.NioResponseFilter;
@@ -20,6 +21,7 @@ import com.joe.utils.IOUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -49,6 +51,19 @@ public class ServerTest {
             System.out.println("系统关闭");
         });
         System.out.println("系统启动成功");
+    }
+
+    @Provider
+    private static class ExceptionWorker implements ExceptionMapper{
+        @Override
+        public boolean mapper(Throwable e) {
+            return true;
+        }
+
+        @Override
+        public ResponseContext.Response toResponse(Throwable e) {
+            return ResponseContext.Response.build(e.toString());
+        }
     }
 
     @Provider(priority = 100)
@@ -110,7 +125,7 @@ public class ServerTest {
         private static AtomicInteger count = new AtomicInteger(0);
 
         @Path("login")
-        public User login(@GeneralParam("openid") String openid, @GeneralParam("account") @NotNull String account,
+        public User login(@Max(100)@GeneralParam("openid") int openid, @GeneralParam("account") @NotNull String account,
                           @GeneralParam("password") String password, @Context Session session) {
             System.out.println("oppenid = [" + openid + "], account = [" + account + "], password = [" + password +
                     "], session = [" + session + "]");
@@ -127,7 +142,7 @@ public class ServerTest {
         @Data
         @AllArgsConstructor
         private static class User {
-            private String openid;
+            private int openid;
             private String account;
             private String password;
         }
