@@ -128,7 +128,12 @@ public class ProtocolImpl implements Protocol {
                     logger.error("过期连接清理线程出错", e);
                 }
                 //每隔1/5的心跳周期检测一次，也就是过期连接最长会延长1/5的心跳周期被清理
-                ThreadUtil.sleep(heartbeat / 5);
+                try {
+                    Thread.sleep(heartbeat / 5 * 1000);
+                } catch (InterruptedException e) {
+                    logger.debug("应用关闭，清理线程被中断");
+                    break;
+                }
             }
         }, "过期连接清理线程");
         cleanupThread.start();
