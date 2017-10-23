@@ -35,6 +35,8 @@ public class BaseDTO<T> implements Serializable {
 		msg.put("503", "Password Has Changed");
 		// 心跳超时
 		msg.put("504", "Timeout");
+		// 参数验证失败
+		msg.put("505", "validation fail");
 	}
 	/**
 	 * 请求状态

@@ -2,7 +2,7 @@ package com.joe.easysocket.server.ext.mvc.coder;
 
 import com.joe.easysocket.server.ext.mvc.Bean;
 import com.joe.easysocket.server.ext.mvc.context.RequestContext;
-import com.joe.easysocket.server.ext.mvc.exception.ParamValidationException;
+import com.joe.easysocket.server.ext.mvc.exception.ParamParserException;
 import com.joe.easysocket.server.ext.mvc.param.ParamParserContainer;
 import com.joe.easysocket.server.ext.mvc.resource.Param;
 
@@ -30,9 +30,9 @@ public interface ReaderInterceptor extends Bean {
      * @param requestContext 请求上下文
      * @param data           接口调用数据
      * @return 读取的参数数组
-     * @throws ParamValidationException 数据读取成功但是校验失败
+     * @throws ParamParserException 数据读取成功但是校验失败
      */
-    Object[] read(List<Param<?>> params, RequestContext requestContext, String data) throws ParamValidationException;
+    Object[] read(List<Param<?>> params, RequestContext requestContext, String data) throws ParamParserException;
 
     /**
      * 初始化

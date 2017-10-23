@@ -2,7 +2,7 @@ package com.joe.easysocket.server.ext.mvc.param;
 
 import com.joe.easysocket.server.ext.mvc.Bean;
 import com.joe.easysocket.server.ext.mvc.context.RequestContext;
-import com.joe.easysocket.server.ext.mvc.exception.ParamValidationException;
+import com.joe.easysocket.server.ext.mvc.exception.ParamParserException;
 import com.joe.easysocket.server.ext.mvc.resource.Param;
 
 /**
@@ -29,5 +29,5 @@ public interface ParamInterceptor extends Bean {
      * @param data    参数数据
      * @return 读取的参数，发生异常时返回null
      */
-    Object read(Param<?> param, RequestContext.RequestWrapper request, String data) throws ParamValidationException;
+    Object read(Param<?> param, RequestContext.RequestWrapper request, String data) throws ParamParserException;
 }

@@ -3,7 +3,7 @@ package com.joe.easysocket.server.ext.mvc.param;
 import com.joe.easysocket.server.ext.mvc.BeanContainer;
 import com.joe.easysocket.server.ext.mvc.container.AbstractSpringContainer;
 import com.joe.easysocket.server.ext.mvc.context.RequestContext;
-import com.joe.easysocket.server.ext.mvc.exception.ParamValidationException;
+import com.joe.easysocket.server.ext.mvc.exception.ParamParserException;
 import com.joe.easysocket.server.ext.mvc.resource.Param;
 
 import java.util.List;
@@ -26,9 +26,9 @@ public class ParamParserContainer extends AbstractSpringContainer<ParamIntercept
      * @param request request对象
      * @param data    请求数据
      * @return 解析后的参数
-     * @throws ParamValidationException 参数解析完成但是校验失败
+     * @throws ParamParserException 参数解析完成但是校验失败
      */
-    public Object parse(Param<?> param, RequestContext.RequestWrapper request, String data) throws ParamValidationException {
+    public Object parse(Param<?> param, RequestContext.RequestWrapper request, String data) throws ParamParserException {
         logger.debug("开始解析参数{}", param);
         List<ParamInterceptor> paramInterceptors = select(t -> {
             return t.isReadable(param, data);

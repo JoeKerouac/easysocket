@@ -2,7 +2,7 @@ package com.joe.easysocket.server.ext.mvc.param;
 
 import com.joe.easysocket.server.ext.mvc.container.Provider;
 import com.joe.easysocket.server.ext.mvc.context.RequestContext;
-import com.joe.easysocket.server.ext.mvc.exception.ParamValidationException;
+import com.joe.easysocket.server.ext.mvc.exception.ParamParserException;
 import com.joe.easysocket.server.ext.mvc.resource.Param;
 import com.joe.parse.json.JsonParser;
 import com.joe.type.JavaType;
@@ -34,18 +34,16 @@ public class GeneralParamParser implements ParamInterceptor {
     }
 
     @Override
-    public Object read(Param<?> param, RequestContext.RequestWrapper request, String data) throws ParamValidationException {
+    public Object read(Param<?> param, RequestContext.RequestWrapper request, String data) throws ParamParserException {
+        JavaType type = param.getType();
+        logger.debug("将{}解析为{};参数{}的类型为{}", data, type, param.getName(), type);
         try {
-            // 只有一个参数
-            JavaType type = param.getType();
-            logger.debug("将{}解析为{}", data, type);
-            logger.debug("参数{}的类型为{}", param.getName(), type);
             Object result = parser.readAsObject(data, JavaTypeUtil.getRealType(type));
             logger.debug("读取出来的参数是：{}", result);
             return result;
-        } catch (ParamValidationException e) {
-            logger.debug("解析参数{}时出错，用户数据为：{}" , param , data , e);
-            return null;
+        } catch (Throwable e) {
+            logger.error("解析参数{}时出错，用户数据为：{}", param, data, e);
+            throw new ParamParserException(param.getName() , e.toString());
         }
     }
 }

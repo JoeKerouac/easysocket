@@ -4,7 +4,7 @@ import com.joe.easysocket.server.ext.mvc.coder.ReaderInterceptor;
 import com.joe.easysocket.server.ext.mvc.coder.WriterInterceptor;
 import com.joe.easysocket.server.ext.mvc.container.Provider;
 import com.joe.easysocket.server.ext.mvc.context.RequestContext;
-import com.joe.easysocket.server.ext.mvc.exception.ParamValidationException;
+import com.joe.easysocket.server.ext.mvc.exception.ParamParserException;
 import com.joe.easysocket.server.ext.mvc.param.Context;
 import com.joe.easysocket.server.ext.mvc.param.ParamParserContainer;
 import com.joe.easysocket.server.ext.mvc.resource.Param;
@@ -49,7 +49,7 @@ public class JsonDataInterceptor implements ReaderInterceptor, WriterInterceptor
 	}
 
 	@Override
-	public Object[] read(List<Param<?>> params, RequestContext requestContext, String data) throws ParamValidationException {
+	public Object[] read(List<Param<?>> params, RequestContext requestContext, String data) throws ParamParserException {
 		logger.debug("要解析的参数格式为：{}", params);
 		// 方法没有参数
 		if (params.isEmpty()) {

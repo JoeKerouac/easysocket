@@ -21,10 +21,7 @@ import com.joe.easysocket.server.ext.mvc.context.session.SessionManager;
 import com.joe.easysocket.server.ext.mvc.context.session.SessionManagerImpl;
 import com.joe.easysocket.server.ext.mvc.data.BaseDTO;
 import com.joe.easysocket.server.ext.mvc.data.InterfaceData;
-import com.joe.easysocket.server.ext.mvc.exception.FilterException;
-import com.joe.easysocket.server.ext.mvc.exception.MediaTypeNoSupportException;
-import com.joe.easysocket.server.ext.mvc.exception.ParamValidationException;
-import com.joe.easysocket.server.ext.mvc.exception.ResourceNotFoundException;
+import com.joe.easysocket.server.ext.mvc.exception.*;
 import com.joe.easysocket.server.ext.mvc.exceptionmapper.ExceptionMapper;
 import com.joe.easysocket.server.ext.mvc.exceptionmapper.ExceptionMapperContainer;
 import com.joe.easysocket.server.ext.mvc.filter.FilterContainer;
@@ -38,6 +35,7 @@ import lombok.Builder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.validation.ValidationException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -291,7 +289,10 @@ public class MvcDataworker implements DataWorker {
             }
 
             //必须在此处初始化，否则当发生异常的时候异常中获取到的requestContext是空，无法获取到信息
-            requestContext = new RequestContext(channelInfo.getChannel() , requestDatagram , requestDatagram.getCharset());
+            requestContext = new RequestContext(channelInfo.getChannel(), requestDatagram, requestDatagram.getCharset
+                    ());
+            // 构建响应上下文，必须在此处初始化，否则当发生异常的时候异常中获取到的responseContext是空，无法获取到信息
+            responseContext = new ResponseContext();
             // MVC数据处理器只有这一种请求data，直接读取
             logger.debug("开始解析请求数据");
             message = parser.readAsObject(body, InterfaceData.class);
@@ -334,8 +335,6 @@ public class MvcDataworker implements DataWorker {
 
             // 调用资源
             Object result = resource.invoke(requestContext);
-            // 构建响应上下文
-            responseContext = new ResponseContext();
             responseContext.getResponse().setResult(result);
             logger.debug("资源调用完毕，请求结果为：{}", result);
 
@@ -344,32 +343,36 @@ public class MvcDataworker implements DataWorker {
             resultData = response(requestContext, responseContext, message);
             logger.debug("响应处理完毕");
         } catch (ResourceNotFoundException e) {
-            logger.warn("用户请求的资源不存在", e);
+            logger.error("用户请求的资源不存在", e);
             resultData = buildResult(requestContext.getSource(), new BaseDTO<>("404"), message.getId(),
                     message.getInvoke(), findWriterInterceptor(null));
         } catch (MediaTypeNoSupportException e) {
-            logger.warn("找不到对应的参数解析器", e);
+            logger.error("找不到对应的参数解析器", e);
             resultData = buildResult(requestContext.getSource(), new BaseDTO<>("505"), message.getId(),
                     message.getInvoke(), resolveDataInterceptor(requestContext, responseContext));
-        } catch (ParamValidationException e) {
-            logger.warn("参数验证失败");
+        } catch (ParamParserException e) {
+            logger.error("参数解析失败", e);
             resultData = buildResult(requestContext.getSource(), BaseDTO.buildError("400"),
+                    message.getId(), message.getInvoke(), resolveDataInterceptor(requestContext, responseContext));
+        } catch (ValidationException e) {
+            logger.error("参数验证失败", e);
+            resultData = buildResult(requestContext.getSource(), BaseDTO.buildError("505"),
                     message.getId(), message.getInvoke(), resolveDataInterceptor(requestContext, responseContext));
         } catch (Throwable e) {
             // 请求过程中发生了异常
-            logger.debug("请求过程中发生了异常，开始查找相应的异常处理器处理异常");
+            logger.error("请求过程中发生了异常，开始查找相应的异常处理器处理异常" , e);
 
             // 查找异常处理器
             List<ExceptionMapper> exceptionMappers = exceptionMapperContainer.select(mapper -> {
                 return mapper.mapper(e);
             });
 
-            logger.debug("异常处理器查找完毕");
+            logger.info("异常处理器查找完毕");
             if (exceptionMappers.isEmpty()) {
-                logger.warn("异常没有找到相应的处理器", e);
+                logger.error("异常没有找到相应的处理器", e);
                 throw e;
             } else {
-                logger.debug("找到异常处理器，由相应的异常处理器处理");
+                logger.info("找到异常处理器，由相应的异常处理器处理");
                 ResponseContext.Response response = exceptionMappers.get(0).toResponse(e);
                 resultData = new InterfaceData(message.getId(), message.getInvoke(),
                         resolveDataInterceptor(requestContext, responseContext).write(response.getResult()));
