@@ -53,7 +53,7 @@ public class ServerTest {
     }
 
     @Provider
-    private static class ExceptionWorker implements ExceptionMapper{
+    private static class ExceptionWorker implements ExceptionMapper {
         @Override
         public boolean mapper(Throwable e) {
             return true;
@@ -124,7 +124,7 @@ public class ServerTest {
         private static AtomicInteger count = new AtomicInteger(0);
 
         @Path("login")
-        public User login(@GeneralParam("account") @NotNull String account,
+        public User login(@GeneralParam("account") @NotNull int account,
                           @GeneralParam("password") String password, @Context Session session) {
             System.out.println("account = [" + account + "], password = [" + password + "], session = [" + session +
                     "]");
@@ -136,7 +136,7 @@ public class ServerTest {
         //只有一个参数的时候
         @Path("print")
         public User print(@Context Session session) {
-            User user = (User)session.getAttribute("user");
+            User user = (User) session.getAttribute("user");
             System.out.println("用户为：" + user);
             if (user == null) {
                 System.out.println("用户信息丢失");
@@ -148,7 +148,7 @@ public class ServerTest {
         @Data
         @AllArgsConstructor
         private static class User {
-            private String account;
+            private int account;
             private String password;
         }
     }

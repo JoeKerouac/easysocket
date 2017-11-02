@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.Annotation;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -106,7 +107,7 @@ public class JsonDataInterceptor implements ReaderInterceptor, WriterInterceptor
 		} else {
 			// 多个参数
 			logger.debug("该资源有多个参数");
-			Map<String, String> paramMap = parser.readAsMap(data, Map.class, String.class, String.class);
+			Map<String, String> paramMap = parser.readAsMap(data, HashMap.class, String.class, String.class);
 			logger.debug("初次解析的参数集合为：{}", paramMap);
 			Object[] objParams = new Object[params.size()];
 			// 分别解析多个参数
