@@ -44,11 +44,35 @@ public class Datagram {
      * @param type    数据报数据类型（1：接口请求）
      */
     public Datagram(byte[] data, int size, byte[] body, byte version, String charset, byte type) {
-        this.data = data;
+        if (data == null) {
+            this.data = null;
+        } else {
+            this.data = new byte[data.length];
+            System.arraycopy(data, 0, this.data, 0, data.length);
+        }
+
+        if (body == null) {
+            this.body = null;
+        } else {
+            this.body = new byte[body.length];
+            System.arraycopy(body, 0, this.body, 0, body.length);
+        }
+
         this.size = size;
-        this.body = body;
         this.version = version;
         this.charset = charset;
         this.type = type;
+    }
+
+    public byte[] getData() {
+        byte[] data = new byte[this.data.length];
+        System.arraycopy(this.data, 0, data, 0, data.length);
+        return data;
+    }
+
+    public byte[] getBody() {
+        byte[] body = new byte[this.body.length];
+        System.arraycopy(this.body, 0, body, 0, body.length);
+        return body;
     }
 }

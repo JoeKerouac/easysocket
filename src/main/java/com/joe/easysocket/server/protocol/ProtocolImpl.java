@@ -1,13 +1,13 @@
 package com.joe.easysocket.server.protocol;
 
-import com.joe.concurrent.ThreadUtil;
 import com.joe.easysocket.server.data.ProtocolData;
 import com.joe.easysocket.server.exception.NoRequireParamException;
 import com.joe.easysocket.server.ext.CustomDeque;
 import com.joe.easysocket.server.ext.CustomMessageListener;
 import com.joe.easysocket.server.ext.EventCenter;
 import com.joe.easysocket.server.ext.PublishCenter;
-import com.joe.utils.StringUtils;
+import com.joe.utils.common.StringUtils;
+import com.joe.utils.concurrent.ThreadUtil;
 import lombok.Builder;
 import lombok.NonNull;
 import org.slf4j.Logger;
@@ -242,7 +242,7 @@ public class ProtocolImpl implements Protocol {
         logger.debug("接收到应用层的数据，开始处理。{}", protocolData);
 
         if (protocolData == null) {
-            logger.warn("应用层发来的消息为空，不进行处理", protocolData);
+            logger.warn("应用层发来的消息为空，不进行处理");
             return ProtocolFuture.ERRORFUTURE;
         }
         PChannel channel = this.pChannels.get(protocolData.getChannel());

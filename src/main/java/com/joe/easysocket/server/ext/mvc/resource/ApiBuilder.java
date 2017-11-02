@@ -1,9 +1,9 @@
 package com.joe.easysocket.server.ext.mvc.resource;
 
 import com.joe.easysocket.server.ext.mvc.resource.annotation.Path;
-import com.joe.scan.ClassScanner;
-import com.joe.scan.MethodScanner;
-import com.joe.scan.ScannerException;
+import com.joe.utils.scan.ClassScanner;
+import com.joe.utils.scan.MethodScanner;
+import com.joe.utils.scan.ScannerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

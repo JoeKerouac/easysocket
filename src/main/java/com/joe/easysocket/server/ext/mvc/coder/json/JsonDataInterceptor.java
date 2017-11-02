@@ -8,8 +8,8 @@ import com.joe.easysocket.server.ext.mvc.exception.ParamParserException;
 import com.joe.easysocket.server.ext.mvc.param.Context;
 import com.joe.easysocket.server.ext.mvc.param.ParamParserContainer;
 import com.joe.easysocket.server.ext.mvc.resource.Param;
-import com.joe.parse.json.JsonParser;
-import com.joe.type.JavaType;
+import com.joe.utils.parse.json.JsonParser;
+import com.joe.utils.type.JavaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

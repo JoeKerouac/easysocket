@@ -16,12 +16,11 @@ import com.joe.easysocket.server.ext.mvc.param.Context;
 import com.joe.easysocket.server.ext.mvc.param.GeneralParam;
 import com.joe.easysocket.server.ext.mvc.resource.annotation.Path;
 import com.joe.easysocket.server.protocol.ServerConfig;
-import com.joe.parse.json.JsonParser;
-import com.joe.utils.IOUtils;
+import com.joe.utils.common.IOUtils;
+import com.joe.utils.parse.json.JsonParser;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -125,24 +124,30 @@ public class ServerTest {
         private static AtomicInteger count = new AtomicInteger(0);
 
         @Path("login")
-        public User login(@Max(100)@GeneralParam("openid") int openid, @GeneralParam("account") @NotNull String account,
+        public User login(@GeneralParam("account") @NotNull String account,
                           @GeneralParam("password") String password, @Context Session session) {
-            System.out.println("oppenid = [" + openid + "], account = [" + account + "], password = [" + password +
-                    "], session = [" + session + "]");
-            return new User(openid, account, password);
+            System.out.println("account = [" + account + "], password = [" + password + "], session = [" + session +
+                    "]");
+            User user = new User(account, password);
+            session.setAttribute("user", user);
+            return user;
         }
 
         //只有一个参数的时候
-        @Path("register")
-        public User register(User user) {
-            System.out.println("注册用户为：" + user);
+        @Path("print")
+        public User print(@Context Session session) {
+            User user = (User)session.getAttribute("user");
+            System.out.println("用户为：" + user);
+            if (user == null) {
+                System.out.println("用户信息丢失");
+                System.exit(1);
+            }
             return user;
         }
 
         @Data
         @AllArgsConstructor
         private static class User {
-            private int openid;
             private String account;
             private String password;
         }

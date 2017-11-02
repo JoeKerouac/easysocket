@@ -1,6 +1,6 @@
 package com.joe.easysocket.server.ext.mvc.resource;
 
-import com.joe.type.JavaType;
+import com.joe.utils.type.JavaType;
 import lombok.Data;
 
 /**

@@ -1,6 +1,5 @@
 package com.joe.easysocket.server.ext.mvc;
 
-import com.joe.concurrent.ThreadUtil;
 import com.joe.easysocket.server.common.DatagramUtil;
 import com.joe.easysocket.server.common.Function;
 import com.joe.easysocket.server.data.Datagram;
@@ -21,16 +20,20 @@ import com.joe.easysocket.server.ext.mvc.context.session.SessionManager;
 import com.joe.easysocket.server.ext.mvc.context.session.SessionManagerImpl;
 import com.joe.easysocket.server.ext.mvc.data.BaseDTO;
 import com.joe.easysocket.server.ext.mvc.data.InterfaceData;
-import com.joe.easysocket.server.ext.mvc.exception.*;
+import com.joe.easysocket.server.ext.mvc.exception.FilterException;
+import com.joe.easysocket.server.ext.mvc.exception.MediaTypeNoSupportException;
+import com.joe.easysocket.server.ext.mvc.exception.ParamParserException;
+import com.joe.easysocket.server.ext.mvc.exception.ResourceNotFoundException;
 import com.joe.easysocket.server.ext.mvc.exceptionmapper.ExceptionMapper;
 import com.joe.easysocket.server.ext.mvc.exceptionmapper.ExceptionMapperContainer;
 import com.joe.easysocket.server.ext.mvc.filter.FilterContainer;
 import com.joe.easysocket.server.ext.mvc.param.ParamParserContainer;
 import com.joe.easysocket.server.ext.mvc.resource.Resource;
 import com.joe.easysocket.server.ext.mvc.resource.ResourceContainer;
-import com.joe.parse.json.JsonParser;
-import com.joe.utils.StringUtils;
-import com.joe.utils.Tools;
+import com.joe.utils.common.StringUtils;
+import com.joe.utils.common.Tools;
+import com.joe.utils.concurrent.ThreadUtil;
+import com.joe.utils.parse.json.JsonParser;
 import lombok.Builder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +51,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * 该实现中register为系统调用，手动调用无效
  * <p>
  * 其中BeanContainer可以提供最基础的实现，但是建议自己实现并注册，默认容器仅用于测试
+ * <p>
+ * 注意：该类非线程安全
  *
  * @author joe
  */
@@ -228,25 +233,25 @@ public class MvcDataworker implements DataWorker {
 
     private void read() {
         ProtocolData protocolData = null;
-        try {
-            logger.debug("开始从队列读取数据");
-            //隔200毫秒检查一次服务器状态，防止因为队列中一直没有数据或者一直没有读取到数据造成服务器无法关闭
-            while (protocolData == null) {
+        logger.debug("开始从队列读取数据");
+        //隔200毫秒检查一次服务器状态，防止因为队列中一直没有数据或者一直没有读取到数据造成服务器无法关闭
+        while (protocolData == null) {
+            try {
                 protocolData = this.deque.pollFirst(200, TimeUnit.MILLISECONDS);
-
-                if (shutdown.get()) {
-                    logger.debug("服务器已经关闭");
-                    break;
-                }
+            } catch (InterruptedException e) {
+                logger.error("数据读取异常", e);
             }
 
-            //只有在服务器关闭的情况下才有可能等于null
-            if (protocolData == null) {
+            if (shutdown.get()) {
                 logger.debug("服务器已经关闭");
-                return;
+                break;
             }
-        } catch (Throwable e) {
-            logger.error("数据读取异常", e);
+        }
+
+        //只有在服务器关闭的情况下才有可能等于null
+        if (protocolData == null) {
+            logger.debug("服务器已经关闭");
+            return;
         }
 
         try {
@@ -360,7 +365,7 @@ public class MvcDataworker implements DataWorker {
                     message.getId(), message.getInvoke(), resolveDataInterceptor(requestContext, responseContext));
         } catch (Throwable e) {
             // 请求过程中发生了异常
-            logger.error("请求过程中发生了异常，开始查找相应的异常处理器处理异常" , e);
+            logger.error("请求过程中发生了异常，开始查找相应的异常处理器处理异常", e);
 
             // 查找异常处理器
             List<ExceptionMapper> exceptionMappers = exceptionMapperContainer.select(mapper -> {

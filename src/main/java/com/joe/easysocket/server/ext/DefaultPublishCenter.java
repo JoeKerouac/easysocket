@@ -1,11 +1,8 @@
 package com.joe.easysocket.server.ext;
 
-import com.joe.concurrent.LockService;
-import com.joe.easysocket.server.data.ProtocolData;
-import com.joe.parse.json.JsonParser;
-import com.joe.utils.StringUtils;
-import lombok.AllArgsConstructor;
-import lombok.NonNull;
+import com.joe.utils.common.StringUtils;
+import com.joe.utils.concurrent.LockService;
+import com.joe.utils.parse.json.JsonParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -225,10 +222,10 @@ public class DefaultPublishCenter implements PublishCenter {
 
             if (obj instanceof InternalMessageListener) {
                 InternalMessageListener internalMessageListener = (InternalMessageListener) obj;
-                return listener.equals(internalMessageListener.listener);
+                return this.listener.equals(internalMessageListener.listener);
             } else if (obj instanceof CustomMessageListener) {
                 CustomMessageListener listener = (CustomMessageListener) obj;
-                return listener.equals(listener);
+                return listener.equals(this.listener);
             } else {
                 return false;
             }
@@ -243,8 +240,13 @@ public class DefaultPublishCenter implements PublishCenter {
 
         @Override
         public byte[] write(Object obj) {
-            if (obj == null)
+            if (obj == null) {
                 return null;
+            } else if (obj instanceof byte[]) {
+                return (byte[]) obj;
+            } else if (obj instanceof String) {
+                return ((String) obj).getBytes();
+            }
             return parser.toJson(obj).getBytes();
         }
 
@@ -263,25 +265,6 @@ public class DefaultPublishCenter implements PublishCenter {
         @Override
         public <T> boolean readable(Class<T> clazz) {
             return true;
-        }
-
-        /**
-         * 用于序列化{@link com.joe.easysocket.server.data.ProtocolData}
-         */
-        @AllArgsConstructor
-        private static class ProtocolDataSerializer {
-            //应用层数据报
-            private byte[] data;
-            //数据对应的通道ID
-            private @NonNull
-            ProtocolData.ChannelInfo channelInfo;
-
-            /**
-             * json反序列化使用
-             */
-            public ProtocolDataSerializer() {
-
-            }
         }
     }
 

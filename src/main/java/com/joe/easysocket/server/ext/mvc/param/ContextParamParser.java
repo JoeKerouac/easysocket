@@ -4,7 +4,7 @@ import com.joe.easysocket.server.ext.mvc.container.Provider;
 import com.joe.easysocket.server.ext.mvc.context.RequestContext;
 import com.joe.easysocket.server.ext.mvc.context.session.Session;
 import com.joe.easysocket.server.ext.mvc.resource.Param;
-import com.joe.type.BaseType;
+import com.joe.utils.type.BaseType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

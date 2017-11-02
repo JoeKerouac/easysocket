@@ -1,9 +1,9 @@
 package com.joe.easysocket.server.common;
 
-import com.joe.collection.ByteArray;
 import com.joe.easysocket.server.data.Datagram;
 import com.joe.easysocket.server.exception.DataOutOfMemory;
 import com.joe.easysocket.server.exception.IllegalRequestException;
+import com.joe.utils.collection.ByteArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

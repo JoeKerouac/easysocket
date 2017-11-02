@@ -1,8 +1,8 @@
 package com.joe.easysocket.server.ext.mvc.container;
 
-import com.joe.concurrent.LockService;
 import com.joe.easysocket.server.ext.mvc.BeanContainer;
-import com.joe.scan.ClassScanner;
+import com.joe.utils.concurrent.LockService;
+import com.joe.utils.scan.ClassScanner;
 import lombok.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

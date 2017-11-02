@@ -6,8 +6,8 @@ import com.joe.easysocket.server.ext.mvc.param.GeneralParam;
 import com.joe.easysocket.server.ext.mvc.resource.annotation.Consumes;
 import com.joe.easysocket.server.ext.mvc.resource.annotation.Path;
 import com.joe.easysocket.server.ext.mvc.resource.annotation.Produces;
-import com.joe.type.JavaType;
-import com.joe.type.JavaTypeUtil;
+import com.joe.utils.type.JavaType;
+import com.joe.utils.type.JavaTypeUtil;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -48,7 +48,7 @@ class ApiUtil {
 		if (resourceMethods == null || resourceMethods.length == 0) {
 			return Collections.emptyMap();
 		}
-		Map<String, Resource> resources = new TreeMap<String, Resource>();
+		Map<String, Resource> resources = new TreeMap<>();
 		for (Method resourceMethod : resourceMethods) {
 			Resource resource = buildResource(instance, resourceClass, resourceMethod);
 			resources.put(resource.getName(), resource);
@@ -117,7 +117,7 @@ class ApiUtil {
 	 * @return
 	 */
 	private static <T> Param<T> createParam(Class<T> clazz) {
-		Param<T> param = new Param<T>();
+		Param<T> param = new Param<>();
 		return param;
 	}
 

@@ -1,7 +1,7 @@
 package com.joe.easysocket.server.ext.mvc.resource;
 
 import com.joe.easysocket.server.ext.mvc.resource.annotation.Path;
-import com.joe.scan.MethodFilter;
+import com.joe.utils.scan.MethodFilter;
 
 import java.lang.reflect.Method;
 
